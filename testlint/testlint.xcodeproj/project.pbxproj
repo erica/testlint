@@ -8,35 +8,40 @@
 
 /* Begin PBXBuildFile section */
 		8E0A29ED1B10F24800E625ED /* Linter.m in Sources */ = {isa = PBXBuildFile; fileRef = 8E0A29EC1B10F24800E625ED /* Linter.m */; };
-		8EBC13971B0D008D009EFBF7 /* testlint in Copy to personal drop box */ = {isa = PBXBuildFile; fileRef = 8ECAFF0F1B0A76FD00A97C1C /* testlint */; };
 		8ECAFF131B0A76FD00A97C1C /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 8ECAFF121B0A76FD00A97C1C /* main.m */; };
-		8ECAFF1A1B0A771700A97C1C /* testlint in Copy to personal bin folder */ = {isa = PBXBuildFile; fileRef = 8ECAFF0F1B0A76FD00A97C1C /* testlint */; };
 		8ECAFF201B0A786000A97C1C /* NSArray+Frankenstein.m in Sources */ = {isa = PBXBuildFile; fileRef = 8ECAFF1D1B0A785300A97C1C /* NSArray+Frankenstein.m */; };
 		8ECAFF251B0A7FA300A97C1C /* Utility.m in Sources */ = {isa = PBXBuildFile; fileRef = 8ECAFF241B0A7FA300A97C1C /* Utility.m */; };
 		8ECAFF2C1B0A895900A97C1C /* RegexHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = 8ECAFF2B1B0A895900A97C1C /* RegexHelper.m */; };
+		9CE9D6381B1230BB0081EE78 /* RegexHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = 8ECAFF2B1B0A895900A97C1C /* RegexHelper.m */; };
+		9CE9D6391B1230BB0081EE78 /* Utility.m in Sources */ = {isa = PBXBuildFile; fileRef = 8ECAFF241B0A7FA300A97C1C /* Utility.m */; };
+		9CE9D63A1B1230BB0081EE78 /* NSArray+Frankenstein.m in Sources */ = {isa = PBXBuildFile; fileRef = 8ECAFF1D1B0A785300A97C1C /* NSArray+Frankenstein.m */; };
+		9CE9D63B1B1230BB0081EE78 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 8ECAFF121B0A76FD00A97C1C /* main.m */; };
+		9CE9D63C1B1230BB0081EE78 /* Linter.m in Sources */ = {isa = PBXBuildFile; fileRef = 8E0A29EC1B10F24800E625ED /* Linter.m */; };
+		9CE9D63F1B1230BB0081EE78 /* testlint in Copy to personal bin folder */ = {isa = PBXBuildFile; fileRef = 8ECAFF0F1B0A76FD00A97C1C /* testlint */; };
+		9CE9D6411B1230BB0081EE78 /* testlint in Copy to personal drop box */ = {isa = PBXBuildFile; fileRef = 8ECAFF0F1B0A76FD00A97C1C /* testlint */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		8EBC13941B0D007A009EFBF7 /* Copy to personal drop box */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "/Users/ericasadun/Public/Drop Box";
-			dstSubfolderSpec = 0;
-			files = (
-				8EBC13971B0D008D009EFBF7 /* testlint in Copy to personal drop box */,
-			);
-			name = "Copy to personal drop box";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		8ECAFF191B0A770A00A97C1C /* Copy to personal bin folder */ = {
+		9CE9D63E1B1230BB0081EE78 /* Copy to personal bin folder */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /Users/ericasadun/bin;
 			dstSubfolderSpec = 0;
 			files = (
-				8ECAFF1A1B0A771700A97C1C /* testlint in Copy to personal bin folder */,
+				9CE9D63F1B1230BB0081EE78 /* testlint in Copy to personal bin folder */,
 			);
 			name = "Copy to personal bin folder";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9CE9D6401B1230BB0081EE78 /* Copy to personal drop box */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "/Users/ericasadun/Public/Drop Box";
+			dstSubfolderSpec = 0;
+			files = (
+				9CE9D6411B1230BB0081EE78 /* testlint in Copy to personal drop box */,
+			);
+			name = "Copy to personal drop box";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -44,7 +49,6 @@
 /* Begin PBXFileReference section */
 		8E0A29EB1B10F24800E625ED /* Linter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Linter.h; sourceTree = "<group>"; };
 		8E0A29EC1B10F24800E625ED /* Linter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Linter.m; sourceTree = "<group>"; };
-		8E0A29F11B1111E300E625ED /* heyitsme.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = heyitsme.h; path = ../../../../heyitsme.h; sourceTree = "<group>"; };
 		8ECAFF0F1B0A76FD00A97C1C /* testlint */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = testlint; sourceTree = BUILT_PRODUCTS_DIR; };
 		8ECAFF121B0A76FD00A97C1C /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = main.m; path = ../testlint/main.m; sourceTree = "<group>"; };
 		8ECAFF1C1B0A785300A97C1C /* NSArray+Frankenstein.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSArray+Frankenstein.h"; sourceTree = "<group>"; };
@@ -53,10 +57,18 @@
 		8ECAFF241B0A7FA300A97C1C /* Utility.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Utility.m; sourceTree = "<group>"; };
 		8ECAFF2A1B0A895900A97C1C /* RegexHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RegexHelper.h; sourceTree = "<group>"; };
 		8ECAFF2B1B0A895900A97C1C /* RegexHelper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RegexHelper.m; sourceTree = "<group>"; };
+		9CE9D6451B1230BB0081EE78 /* testlint-personal */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "testlint-personal"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		8ECAFF0C1B0A76FD00A97C1C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9CE9D63D1B1230BB0081EE78 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -69,7 +81,6 @@
 		8ECAFF061B0A76FD00A97C1C = {
 			isa = PBXGroup;
 			children = (
-				8E0A29F11B1111E300E625ED /* heyitsme.h */,
 				8ECAFF1B1B0A785300A97C1C /* Source */,
 				8ECAFF101B0A76FD00A97C1C /* Products */,
 			);
@@ -79,6 +90,7 @@
 			isa = PBXGroup;
 			children = (
 				8ECAFF0F1B0A76FD00A97C1C /* testlint */,
+				9CE9D6451B1230BB0081EE78 /* testlint-personal */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -109,8 +121,6 @@
 			buildPhases = (
 				8ECAFF0B1B0A76FD00A97C1C /* Sources */,
 				8ECAFF0C1B0A76FD00A97C1C /* Frameworks */,
-				8ECAFF191B0A770A00A97C1C /* Copy to personal bin folder */,
-				8EBC13941B0D007A009EFBF7 /* Copy to personal drop box */,
 			);
 			buildRules = (
 			);
@@ -119,6 +129,24 @@
 			name = testlint;
 			productName = testlint;
 			productReference = 8ECAFF0F1B0A76FD00A97C1C /* testlint */;
+			productType = "com.apple.product-type.tool";
+		};
+		9CE9D6361B1230BB0081EE78 /* testlint - personal */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9CE9D6421B1230BB0081EE78 /* Build configuration list for PBXNativeTarget "testlint - personal" */;
+			buildPhases = (
+				9CE9D6371B1230BB0081EE78 /* Sources */,
+				9CE9D63D1B1230BB0081EE78 /* Frameworks */,
+				9CE9D63E1B1230BB0081EE78 /* Copy to personal bin folder */,
+				9CE9D6401B1230BB0081EE78 /* Copy to personal drop box */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "testlint - personal";
+			productName = testlint;
+			productReference = 9CE9D6451B1230BB0081EE78 /* testlint-personal */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
@@ -148,6 +176,7 @@
 			projectRoot = "";
 			targets = (
 				8ECAFF0E1B0A76FD00A97C1C /* testlint */,
+				9CE9D6361B1230BB0081EE78 /* testlint - personal */,
 			);
 		};
 /* End PBXProject section */
@@ -162,6 +191,18 @@
 				8ECAFF201B0A786000A97C1C /* NSArray+Frankenstein.m in Sources */,
 				8ECAFF131B0A76FD00A97C1C /* main.m in Sources */,
 				8E0A29ED1B10F24800E625ED /* Linter.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9CE9D6371B1230BB0081EE78 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9CE9D6381B1230BB0081EE78 /* RegexHelper.m in Sources */,
+				9CE9D6391B1230BB0081EE78 /* Utility.m in Sources */,
+				9CE9D63A1B1230BB0081EE78 /* NSArray+Frankenstein.m in Sources */,
+				9CE9D63B1B1230BB0081EE78 /* main.m in Sources */,
+				9CE9D63C1B1230BB0081EE78 /* Linter.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -259,6 +300,20 @@
 			};
 			name = Release;
 		};
+		9CE9D6431B1230BB0081EE78 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "testlint-personal";
+			};
+			name = Debug;
+		};
+		9CE9D6441B1230BB0081EE78 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "testlint-personal";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -276,6 +331,15 @@
 			buildConfigurations = (
 				8ECAFF171B0A76FD00A97C1C /* Debug */,
 				8ECAFF181B0A76FD00A97C1C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9CE9D6421B1230BB0081EE78 /* Build configuration list for PBXNativeTarget "testlint - personal" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9CE9D6431B1230BB0081EE78 /* Debug */,
+				9CE9D6441B1230BB0081EE78 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
