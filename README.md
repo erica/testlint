@@ -5,6 +5,6 @@ Sometimes little thrown-together solutions create greater value than their aesth
 * Compile
 * Add to Swift project build phases (Target > Build Phases >  or use directly at the command line.
 
-![Setup](http://imgur.com/EIApOcy)
+![Setup](http://i.imgur.com/EIApOcy.jpg)
 
 No dependencies.
