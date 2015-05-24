@@ -131,9 +131,9 @@
 			productReference = 8ECAFF0F1B0A76FD00A97C1C /* testlint */;
 			productType = "com.apple.product-type.tool";
 		};
-		9CE9D6361B1230BB0081EE78 /* testlint - personal */ = {
+		9CE9D6361B1230BB0081EE78 /* testlint - erica's personal */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 9CE9D6421B1230BB0081EE78 /* Build configuration list for PBXNativeTarget "testlint - personal" */;
+			buildConfigurationList = 9CE9D6421B1230BB0081EE78 /* Build configuration list for PBXNativeTarget "testlint - erica's personal" */;
 			buildPhases = (
 				9CE9D6371B1230BB0081EE78 /* Sources */,
 				9CE9D63D1B1230BB0081EE78 /* Frameworks */,
@@ -144,7 +144,7 @@
 			);
 			dependencies = (
 			);
-			name = "testlint - personal";
+			name = "testlint - erica's personal";
 			productName = testlint;
 			productReference = 9CE9D6451B1230BB0081EE78 /* testlint-personal */;
 			productType = "com.apple.product-type.tool";
@@ -176,7 +176,7 @@
 			projectRoot = "";
 			targets = (
 				8ECAFF0E1B0A76FD00A97C1C /* testlint */,
-				9CE9D6361B1230BB0081EE78 /* testlint - personal */,
+				9CE9D6361B1230BB0081EE78 /* testlint - erica's personal */,
 			);
 		};
 /* End PBXProject section */
@@ -335,7 +335,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		9CE9D6421B1230BB0081EE78 /* Build configuration list for PBXNativeTarget "testlint - personal" */ = {
+		9CE9D6421B1230BB0081EE78 /* Build configuration list for PBXNativeTarget "testlint - erica's personal" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				9CE9D6431B1230BB0081EE78 /* Debug */,
