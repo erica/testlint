@@ -41,7 +41,7 @@
 
 @interface RegexHelper : NSObject
 + (BOOL) testPattern: (NSString *) searchPattern inString: (NSString *) string;
-+ (BOOL) testPatternCaseSensitive: (NSString *) searchPattern inString: (NSString *) string;
++ (BOOL) testCaseSensitivePattern: (NSString *) searchPattern inString: (NSString *) string;
 + (BOOL) testString: (NSString *) test inString: (NSString *) string;
 @end
 

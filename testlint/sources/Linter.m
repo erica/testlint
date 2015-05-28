@@ -9,6 +9,20 @@
 #import "NSArray+Frankenstein.h"
 #import "RegexHelper.h"
 
+/*
+ http://ericasadun.com/2015/05/05/swift-dont-do-that/
+ 
+* (yet) ALL_CAPS (would be easy to find)
+*  limited type inferencing
+* var vs let
+* classes vs structs (more a guideline, not really a rule)
+* fallback values vs optionals
+* verbosity for anonymous types, labels, etc (e.g. $0 vs something -> something in)
+* Native vs Cocoa
+* title case for enum variants and types and global scope?
+ 
+ */
+
 @implementation Linter
 {
     NSMutableDictionary *uidStrings;
@@ -63,9 +77,22 @@
         ++count;
         NSString *line = eachLine;
         
+        /*
+
+         Future:
+         Would be better if tested if items are commented including between asterisks. 
+         Could do this using SourceKit processing         
+         Otherwise current stability/reliability: High
+         
+         */
+        
+        
         // META PROCESSING
         // This material is always active and should never be overridden by command-line parameters
         {
+            
+#pragma mark - Keyword Processing
+
             // No worries, mate! Skip any line with nwm
             if ([RegexHelper testString:@"nwm" inString:line]) continue;
             
@@ -99,8 +126,9 @@
                 _encounteredErrors = YES;
             }
             
-            // AVOID FALSE PINGS ON COMMENTED LINES
-            // Clip off trailing comments
+#pragma mark - Single-line Comment Processing
+            
+            // Avoid false pings on lines by clipping trailing comments
             NSRange range = [line rangeOfString:@"// "];
             if (range.location != NSNotFound)
             {
@@ -109,17 +137,28 @@
                 // Also trims start of line, but that shouldn't be an issue for the following checks
                 line = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
             }
+            
+            // Skip commented lines
+            if ([RegexHelper testPattern:@"^\\s*//" inString:line])
+                continue;
         }
+        
+#pragma mark - STYLE ISSUES
         
         // STYLE ISSUES
         if (!_skipStyleChecks)
         {
+            
+#pragma mark - Check for Colon style issues
+            
             /*
 
              This is another one that goes against personal taste.
              I much prefer spaces before and after colons for the most part (except
              in parameter lists, where I left associate with the label) but again
              consistency and peer pressure wins.
+             
+             Reliability/Stability: Medium
 
              */
             if (_enableAnalRetentiveColonCheck)
@@ -148,7 +187,15 @@
                 }
             }
             
-            // Brace abuse checking defaults to NO
+#pragma mark - Single-line Brace Check
+
+            /*
+
+             Brace abuse checking defaults to NO
+             Reliability/Stability: High but I'm not sure I really care about this test
+             
+             */
+            
             if (_enableSingleLineBraceAbuseCheck)
             {
                 if ([RegexHelper testPattern:@"\\{.*;.*\\}" inString:line])
@@ -172,11 +219,15 @@
                 //        }
             }
             
+#pragma mark - Allman Check
+            
             /*
 
              True fact. I love 💗💗 Allman. It's the best for teaching and reading, not to mention the
              better cognitive load for general dev. However, I'm operating under external pressures.
              I have caved here.
+             
+             Reliability/Stability: High, but :(
 
              */
             
@@ -201,6 +252,14 @@
         }
         
         // FILE HYGIENE
+        
+#pragma mark - Trailing Whitespace
+        /*
+
+         Trailing whitespace
+         Reliability/Stability: Very high
+         
+         */
         if (!_skipHygieneChecks)
         {
             // Trailing whitespace on lines
@@ -214,6 +273,8 @@
                 Log(@"%@:%zd: warning: Line %zd includes trailing whitespace characters", path, count, count);
             }
         }
+
+#pragma mark - LANGUAGE ISSUES
         
         // LANGUAGE ISSUES
         /*
@@ -227,7 +288,100 @@
          
          */
         
-        // Access modifiers checks
+        
+#pragma mark - Space check after init
+        /*
+         
+         init checks - skip space between init or init? and (
+         stability/reliability: High
+         
+         */
+        if ([RegexHelper testPattern:@"init\\?*\\s+\\(" inString:line]){
+            ++warnings;
+            Log(@"%@:%zd: warning: Line %zd: Extraneous space in init( or init?( declaration", path, count, count);
+        }
+        
+#pragma mark - Prefer native constructors
+        /*
+         
+         Prefer native constructors
+         stability/reliability: High
+         
+         */
+        if ((![RegexHelper testString:@"CGAffineTransformMake" inString:line]) &&
+            ([RegexHelper testPattern:@"CG[:word:]*Make" inString:line] ||
+            [RegexHelper testString:@"NSMake" inString:line]))
+        {
+            ++warnings;
+            Log(@"%@:%zd: warning: Line %zd: Prefer native constructors over old-style convenience functions", path, count, count);
+        }
+
+        
+#pragma mark - Trailing closures
+        
+        /*
+         I would encourage you to consider not using the trailing-closure syntax for any closures whose return value is meaningful (i.e. closures that aren't primarily executed for their side-effects)
+         
+         Eridius: erica: in your gist, you had it backwards. mirrorDo() is evaluating the closure for side-effects, so it can use trailing-closure syntax, mirrorMap() is the one that uses the return value and so should not
+         Eridius: although personally, I still wouldn't use trailing-closure syntax for mirrorDo() because it's using the .map() function, which is evaluated for its return value, you're just (ab)using that for side-effect reasons
+         Eridius: (i.e. I base the rule on the function being called, not the actual closure being executed)
+         
+         map, sort, sorted, join, split, reduce, filter, contains
+         
+         High false positive count for patterns of if let x = y, NL z = f(w) {
+         
+         Eridius: erica: basically, any function that takes a closure and returns something other than Void should probably not use trailing-closure syntax
+         [2:43pm] apparition joined the chat room.
+         [2:43pm] Eridius: although I might make an exception for something like NSNotificationCenter.addObserverForName(_:object:queue:usingBlock:)
+         [2:43pm] Eridius: because while that does return a value, it's still primarily a control-flow construct
+         */
+
+        /*
+         
+         trailing closure checks
+         stability/reliability: Very low
+         
+         */
+
+        BOOL testForClosureStuff = NO;
+        if (testForClosureStuff)
+        {
+            if ([RegexHelper testString:@"map{" inString:line])
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd: Avoid trailing-closure for meaningful return values including maps", path, count, count);
+            }
+            else if ([RegexHelper testPattern:@"\\)\\s*\\{" inString:line] &&
+                     ![RegexHelper testPattern:@"^\\s*if " inString:line] &&
+                     ![RegexHelper testPattern:@"^\\s*for " inString:line] &&
+                     ![RegexHelper testPattern:@"^\\s*while " inString:line] &&
+                     ![RegexHelper testPattern:@"^\\s*do " inString:line] &&
+                     ![RegexHelper testString:@"switch" inString:line] &&
+                     ![RegexHelper testString:@"func " inString:line] &&
+                     ![RegexHelper testPattern:@"init\\?*\\s*\\(" inString:line])
+            {
+                //  &&               [RegexHelper testPattern:@"\\}+[^)]" inString:line])
+                // Boolean returns are likely to be if statements: contains, but contains can also have trailing for {}
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd: Avoid trailing-closure for meaningful return values", path, count, count);
+//                NSLog(@"PING %@", line);
+//                for (NSString *fx in @[@"map(", @"sort(", @"sorted(", @"join(", @"split(", @"reduce(", @"filter("])
+//                {
+//                    if ([RegexHelper testString:fx inString:line]) {
+//                        ++warnings;
+//                        Log(@"%@:%zd: warning: Line %zd: Avoid trailing-closure for meaningful return values", path, count, count);
+//                    }
+//                }
+            }
+        }
+        
+#pragma mark - Access Modifiers
+        /*
+         
+         Access modifiers checks
+         stability/reliability - very low
+         
+         */
         if (_enableAccessModifierChecks && !skipAccessCheckForFile)
         {
             if (!topLevel && [RegexHelper testPattern:@"^\\s*func" inString:line])
@@ -277,6 +431,14 @@
             }
         }
         
+#pragma mark - (...) -> Void check
+        
+        /*
+         
+         Void return type check
+         stability/reliability high
+         
+         */
         
         // Check that -> return tokens point to Void and not () and that they are surrounded by spaces
         if ([RegexHelper testString:@"->=" inString:line]) {
@@ -290,6 +452,16 @@
             Log(@"%@:%zd: warning: Line %zd: leave spaces around the -> return token", path, count, count);
         }
         
+#pragma mark - Terminal semicolons
+        
+        /*
+         
+         Terminal semicolons check
+         stability/reliability high
+         
+         */
+
+        
         // Eliminate line-terminating semicolons
         if ([RegexHelper testPattern:@";\\s*$" inString:line])
         {
@@ -297,14 +469,50 @@
             Log(@"%@:%zd: warning: Line %zd: Swift does not require terminal semicolons except for statement separation", path, count, count);
         }
         
-        // Elminate parentheses around if conditions
+#pragma mark - Check for parens around if conditions
+        
+        /*
+         
+         Eliminate parentheses around if conditions
+         stability/reliability medium
+         can fail with if (x == y) && (z == w) for example
+         
+         */
+
         if ([RegexHelper testPattern:@"if[\\s]*\\(" inString:line])
         {
             ++warnings;
             Log(@"%@:%zd: warning: Line %zd: Swift if statements do not require parentheses", path, count, count);
         }
         
-        // Extraneous lets. For multi-line in-context scan, would test for ,\s*\n\s*let
+#pragma mark - Check for parens around switch conditions
+        
+        /*
+         
+         Eliminate parentheses around switch conditions that aren't tuples
+         stability/reliability medium
+         
+         */
+        if ([RegexHelper testPattern:@"switch\\s*\\(.*,.*\\)\\s*\\{" inString:line])
+        {
+            // skip likely tuples
+        }
+        else if ([RegexHelper testPattern:@"switch\\s*\\(" inString:line])
+        {
+            ++warnings;
+            Log(@"%@:%zd: warning: Line %zd: Swift switch statements do not require parentheses", path, count, count);
+        }
+
+        
+#pragma mark - Extraneous lets
+        
+        /*
+         
+         Extraneous lets. For multi-line in-context scan, would test for ,\s*\n\s*let
+         stability/reliability medium
+         
+         */
+        
         if ([RegexHelper testString:@"case" inString:line])
         {
             // do not test with case statements
@@ -322,15 +530,30 @@
 //            Log(@"%@", line);
         }
         
-        // Limit use of forced unwrap and casts, however there are many cromulent reasons to
-        // use these. Currently issued as warning rather than caution, but may downgrade or
-        // offer forceChecksAreCautions option.
+#pragma mark - Forced unwraps and casts
+        
+        /*
+         
+         Forced unwraps and casts
+         Limit use of forced unwrap and casts, however there are many cromulent reasons to
+         use these. Currently issued as warning rather than caution, but may downgrade or
+         offer forceChecksAreCautions option.
+
+         stability/reliability medium
+         
+         */
+        
         if (_enableUnwrapAndForcedCastCheck)
         {
             if ([RegexHelper testString:@"as!" inString:line])
             {
-                ++warnings;
-                Log(@"%@:%zd: warning: Line %zd: Forced casts are generally unsafe", path, count, count);
+                // I've commented this out because nearly every use of as! is pretty deliberate
+//                ++warnings;
+//                Log(@"%@:%zd: warning: Line %zd: Forced casts are generally unsafe", path, count, count);
+            }
+            else if ([RegexHelper testPattern:@":\\s*\\w+! " inString:line])
+            {
+                // Also a do-nothing. This is likely an implicitly unwrapped declaration
             }
             else if ([RegexHelper testString:@"! " inString:line])
             {
@@ -339,8 +562,16 @@
             }
         }
         
-        // Eliminate extraneous breaks in switch patterns other than in default statements
-        // For multi-line in-context, should test for control-flow use of break
+#pragma mark - Extraneous break statements
+        
+        /*
+         
+         Eliminate extraneous breaks in switch patterns other than in default statements
+         For multi-line in-context, should test for control-flow use of break
+         
+         stability/reliability medium
+         
+         */
         
         if ([RegexHelper testPattern:@":\\s+break" inString:line])
         {
@@ -371,8 +602,17 @@
             }
         }
         
-        // Test for .count == 0 and count() == 0 that might be better as isEmpty
-        // Should this be a warning or a caution? May also catch mirror.count
+#pragma mark - Empty count checks
+        
+        /*
+         
+         Test for .count == 0 and count() == 0 that might be better as isEmpty
+         Should this be a warning or a caution? May also catch mirror.count
+         
+         stability/reliability medium to high
+         
+         */
+        
         if ([RegexHelper testPattern:@"mirror" inString:line])
         {
             // Ignore any line that references mirrors.
@@ -384,15 +624,50 @@
             Log(@"%@:%zd: warning: Line %zd: Consider replacing zero count check with isEmpty().", path, count, count);
         }
         
-        // Test for any use of NSNotFound, use contains instead?
+#pragma mark - NSNotFound checks
+        
+        /*
+         
+         Test for any use of NSNotFound, use contains instead?
+         
+         stability/reliability high
+         
+         */
+        
         if ([RegexHelper testPattern:@"!=\\s*NSNotFound" inString:line])
         {
             ++warnings;
             Log(@"%@:%zd: warning: Consider replacing NSNotFound pattern with contains()", path, count, count);
         }
         
+#pragma mark - Ref checks
         
-        // Highlight enumeration prefixes for elimnation
+        /*
+         
+         Try to find CG/CF constructors with Ref at the end
+         
+         stability/reliability medium
+         
+         */
+        
+        if ([RegexHelper testCaseSensitivePattern:@"[:upper:]{3}\\w*Ref\\W" inString:line])
+        {
+            ++warnings;
+            Log(@"%@:%zd: warning: CFReference types need not end with Ref in Swift", path, count, count);
+        }
+
+        
+        
+#pragma mark - Enumeration prefix checks
+        
+        /*
+         
+         Highlight enumeration prefixes for elimnation
+         
+         stability/reliability high
+         
+         */
+
         for (NSString *prefix in prefixes)
         {
             // Has enumeration prefix with dot after but no rawValue
@@ -404,27 +679,36 @@
             }
         }
         
-        // Find constructors, which in context may use inferrable class types
+#pragma mark - Constructor checks
+        
+        /*
+         
+         Find constructors, which in context may use inferrable class types
+         
+         stability/reliability low - medium
+         
+         */
+
         if (_enableConstructors)
         {
             // Matches most no-arg class methods as likely constructors
-            if ([RegexHelper testPatternCaseSensitive:@"^\\s*[:upper:]\\w+\\.\\w+\\(\\)" inString:line])
+            if ([RegexHelper testCaseSensitivePattern:@"^\\s*[:upper:]\\w+\\.\\w+\\(\\)" inString:line])
             {
                 // first thing on line? skip.
             }
-            else if ([RegexHelper testPatternCaseSensitive:@"let\\s*\\w+\\s*[=]\\s*[:upper:]\\w+\\.\\w+\\(\\)" inString:line] ||
-                     [RegexHelper testPatternCaseSensitive:@"var\\s*\\w+\\s*[=]\\s*[:upper:]\\w+\\.\\w+\\(\\)" inString:line])
+            else if ([RegexHelper testCaseSensitivePattern:@"let\\s*\\w+\\s*[=]\\s*[:upper:]\\w+\\.\\w+\\(\\)" inString:line] ||
+                     [RegexHelper testCaseSensitivePattern:@"var\\s*\\w+\\s*[=]\\s*[:upper:]\\w+\\.\\w+\\(\\)" inString:line])
             {
                 // after let or var assignment, skip. There won't be any context for type inference
             }
-            else if ([RegexHelper testPatternCaseSensitive:@"[=]\\s*[:upper:]\\w+\\.\\w+\\(\\)" inString:line])
+            else if ([RegexHelper testCaseSensitivePattern:@"[=]\\s*[:upper:]\\w+\\.\\w+\\(\\)" inString:line])
             {
                 // after assignment, e.g. view.backgroundColor = UIColor.blueColor()
                 ++cautions;
                 Log(@"%@:%zd: note: Line %zd: CAUTION: Possible constructor assignment pattern may not require inferred prefix", path, count, count);
                 Log(@"%@", line);
             }
-            else if ([RegexHelper testPatternCaseSensitive:@"[ :,\{\(][:upper:]\\w+\\.\\w+\\(\\)" inString:line])
+            else if ([RegexHelper testCaseSensitivePattern:@"[ :,\{\(][:upper:]\\w+\\.\\w+\\(\\)" inString:line])
             {
                 ++cautions;
                 Log(@"%@:%zd: note: Line %zd: CAUTION: Possible constructor pattern may not require inferred prefix", path, count, count);
@@ -432,7 +716,15 @@
             }
         }
         
-        // Self references
+#pragma mark - Self. reference checks
+        
+        /*
+         
+         self references that may not be needed
+         stability/reliability medium - high
+         
+         */
+        
         BOOL treatSelfRefAsWarning = YES;
         if ([RegexHelper testString:@"self.init" inString:line])
         {
@@ -481,7 +773,18 @@
             }
         }
     }
+
+#pragma mark - FILE ISSUES
     
+#pragma mark - File ending check
+    
+    /*
+     
+     Check for trailing or missing newlines
+     stability/reliability high
+     
+     */
+
     if (!_skipHygieneChecks)
     {
         // File-level line hygiene

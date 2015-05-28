@@ -7,7 +7,7 @@
 #import "RegexHelper.h"
 
 @implementation RegexHelper
-+ (BOOL) testPatternCaseSensitive: (NSString *) searchPattern inString: (NSString *) string
++ (BOOL) testCaseSensitivePattern: (NSString *) searchPattern inString: (NSString *) string
 {
     return [string rangeOfString:searchPattern options:NSRegularExpressionCaseInsensitive | NSRegularExpressionSearch].location != NSNotFound;
 }
