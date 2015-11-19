@@ -36,6 +36,16 @@
 
 #pragma mark - Paths
 
+- (NSString *) projectName
+{
+    NSFileManager *manager = [NSFileManager defaultManager];
+    NSString *wd = manager.currentDirectoryPath;
+    NSArray *contents = [manager contentsOfDirectoryAtPath:wd error:nil];
+    NSArray *filtered = [contents filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"self endswith 'xcodeproj'"]];
+    if (!filtered.count) return nil;
+    return [filtered.lastObject stringByDeletingPathExtension];
+}
+
 - (NSString *) projectPath
 {
     NSFileManager *manager = [NSFileManager defaultManager];
@@ -67,22 +77,29 @@
     {
         NSDictionary *group = objects[key];
         NSString *groupPath = group[@"path"];
-        if (!groupPath) continue;
         
         for (NSString *childKey in group[@"children"])
         {
             NSDictionary *child = objects[childKey];
             [files removeObject:childKey];
-            NSString *childPath = child[@"path"];
-            if (!childPath) continue;
             BOOL isSwiftFile = [child[@"lastKnownFileType"] isEqualToString:@"sourcecode.swift"];
             if (!isSwiftFile) continue;
-            
+
+            NSString *childPath = child[@"path"];
+            if (!childPath) continue;
+
+            NSString *wd = [[NSFileManager defaultManager] currentDirectoryPath];
+            if (!groupPath) groupPath = [wd stringByAppendingPathComponent:[self projectName]];
             NSString *path = [groupPath stringByAppendingPathComponent:childPath];
+            if ([[NSFileManager defaultManager] fileExistsAtPath:path]) {
+                [results addObject:path];
+                continue;
+            }
+
             const char *cpath = [path cStringUsingEncoding:NSUTF8StringEncoding];
             char *resolved = NULL;
             char *returnValue = realpath(cpath, resolved);
-            if (returnValue == NULL && resolved != NULL) continue;
+            if (returnValue == NULL || resolved == NULL) continue;
             [results addObject:[NSString stringWithCString:returnValue encoding:NSUTF8StringEncoding]];
         }
     }
@@ -92,10 +109,12 @@
     {
         NSDictionary *dict = objects[fileKey];
         NSString *path = dict[@"path"];
+        NSLog(@"NOTGROUP: %@", dict);
         const char *cpath = [path cStringUsingEncoding:NSUTF8StringEncoding];
         char *resolved = NULL;
         char *returnValue = realpath(cpath, resolved);
-        if (returnValue == NULL && resolved != NULL) continue;
+        NSLog(@"path: %@, cpath: %s, resolved %s return value %s", path, cpath, resolved, returnValue);
+        if (returnValue == NULL || resolved == NULL) continue;
         [results addObject:[NSString stringWithCString:returnValue encoding:NSUTF8StringEncoding]];
     }
     
@@ -176,16 +195,10 @@ void usage(NSString *appname)
 {
     Log(@"Usage: %@ options file...", appname);
     Log(@"    help:                       -help");
-    Log(@"    skip strict colon checks:   -relaxcolons  (Standard Swift style)");
-    Log(@"    skip Allman check:          -allmanrocks  (Standard Swift style)");
-    Log(@"    skip all style checks:      -nostyle      (Standard Swift style)");
-    Log(@"    skip cast/unwrap checks:    -nocast       (Extra strict)");
-    Log(@"    skip hygiene checks:        -nohygiene    (Extraneous spacing)");
-    Log(@"    access modifier checks:     -access       (False positives)");
-    Log(@"    enable constructor checks:  -constructors (False positives)");
     Log(@"");
-    Log(@"Use 'NOTE: ', 'ERROR: ', 'WARNING: ', and FIXME to force emit");
+    Log(@"Use 'NOTE: ', 'ERROR: ', 'WARNING: ', HACK, and FIXME to force emit");
     Log(@"Use 'nwm' to skip individual line processing: // nwm");
+    Log(@"Use ##SkipAccessChecksForFile somewhere to skip file processing");
     exit(-1);
 }
 
@@ -229,27 +242,6 @@ int main(int argc, const char * argv[]) {
                                    @"-help" : ^{
                                        // Quits after help
                                        usage(appName);
-                                   },
-                                   @"-relaxcolons" : ^{ // proctology central
-                                       processor.linter.enableAnalRetentiveColonCheck = NO;
-                                   },
-                                   @"-allmanrocks" : ^{
-                                       processor.linter.enableAllmanCheck = NO;
-                                   },
-                                   @"-nostyle" : ^{
-                                       processor.linter.skipStyleChecks = YES;
-                                   },
-                                   @"-nohygiene" : ^{
-                                       processor.linter.skipHygieneChecks = YES;
-                                   },
-                                   @"-nocast" : ^{
-                                       processor.linter.enableUnwrapAndForcedCastCheck = NO;
-                                   },
-                                   @"-access" : ^{
-                                       processor.linter.enableAccessModifierChecks = YES;
-                                   },
-                                   @"-constructors" : ^{
-                                       processor.linter.enableConstructors = YES;
                                    },
                                    }[argument];
             if (block) block();

@@ -10,23 +10,23 @@
 #import "RegexHelper.h"
 
 /*
- http://ericasadun.com/2015/05/05/swift-dont-do-that/
  
-* (yet) ALL_CAPS (would be easy to find)
-*  limited type inferencing
-* var vs let
-* classes vs structs (more a guideline, not really a rule)
-* fallback values vs optionals
-* verbosity for anonymous types, labels, etc (e.g. $0 vs something -> something in)
-* Native vs Cocoa
-* title case for enum variants and types and global scope?
+ To explore:
+ - verbosity for anonymous types $0 vs something in
+ - title case for enum variants
+ - title case for global scope and types
+ - overly long names?
+ - avoiding i, j, k, tmp
+ - excessive nesting
+ - giant statements
+ - protocol beautification
+ - protocol single-letter abuse vs meaningful names
+ - missing access modifiers? access modifier scan?
+ - De Morgan's law check? (probably not)
  
  */
 
 @implementation Linter
-{
-    NSMutableDictionary *uidStrings;
-}
 
 #pragma mark - Init
 
@@ -34,19 +34,6 @@
 {
     if (!(self = [super init])) return self;
     _encounteredErrors = NO;
-
-    _skipStyleChecks = NO;
-    _skipHygieneChecks = NO;
-    _enableUnwrapAndForcedCastCheck = YES;
-    _enableAnalRetentiveColonCheck = YES;
-    _enableAllmanCheck = YES;
-    
-    _enableSingleLineBraceAbuseCheck = NO;
-
-    // Many false positives
-    _enableAccessModifierChecks = NO;
-    _enableConstructors = NO;
-
     return self;
 }
 
@@ -57,11 +44,16 @@
     NSString *string = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:nil];
     if (!string) return;
     
-    BOOL topLevel = [string containsString:@"@UIApplicationMain"];
+//    BOOL topLevel = [string containsString:@"@UIApplicationMain"]; // reserved for later use
     
     // I have some files that are purely generic type stuff and access checks kills 'em
     BOOL skipAccessCheckForFile = [string containsString:@"##SkipAccessChecksForFile"];
-
+    if (skipAccessCheckForFile)
+    {
+        Log(@"Developer-directed file skip");
+        return;
+    }
+    
     // Splinter into lines
     NSArray *lines = [string componentsSeparatedByString:@"\n"];
     
@@ -77,16 +69,6 @@
         ++count;
         NSString *line = eachLine;
         
-        /*
-
-         Future:
-         Would be better if tested if items are commented including between asterisks. 
-         Could do this using SourceKit processing         
-         Otherwise current stability/reliability: High
-         
-         */
-        
-        
         // META PROCESSING
         // This material is always active and should never be overridden by command-line parameters
         {
@@ -101,6 +83,18 @@
             {
                 ++warnings;
                 Log(@"%@:%zd: warning: Line %zd is broken", path, count, count);
+                Log(@"%@", line);
+            }
+            else if ([RegexHelper testString:@"TODO" inString:line])
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd needs addressing", path, count, count);
+                Log(@"%@", line);
+            }
+            else if ([RegexHelper testString:@"HACK" inString:line])
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd uses inelegant problem solving", path, count, count);
                 Log(@"%@", line);
             }
             else if ([RegexHelper testString:@"NOTE: " inString:line])
@@ -125,7 +119,7 @@
                 Log(@"%@", line);
                 _encounteredErrors = YES;
             }
-            
+
 #pragma mark - Single-line Comment Processing
             
             // Avoid false pings on lines by clipping trailing comments
@@ -138,7 +132,7 @@
                 line = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
             }
             
-            // Skip commented lines
+            // Skip commented lines. This is not particularly reliable.
             if ([RegexHelper testPattern:@"^\\s*//" inString:line])
                 continue;
         }
@@ -146,7 +140,6 @@
 #pragma mark - STYLE ISSUES
         
         // STYLE ISSUES
-        if (!_skipStyleChecks)
         {
             
 #pragma mark - Check for Colon style issues
@@ -161,47 +154,196 @@
              Reliability/Stability: Medium
 
              */
-            if (_enableAnalRetentiveColonCheck)
+            // Spaces before colons
+            if ([RegexHelper testPattern:@"\\?\\s+.*:" inString:line])
             {
-                // Handle colons
-                if ([RegexHelper testPattern:@"\\?\\s+\\S+\\s+:" inString:line])
-                {
-                    // ignore "? x : y" in ternary statements
-                }
-                else if ([RegexHelper testPattern:@"\\?\\s+:" inString:line])
-                {
-                    // ignore "? :" in ternary statements
-                }
-                else if ([RegexHelper testPattern:@"\\[\\S+\\s*:\\s+\\S+\\]" inString:line] ||
-                         [RegexHelper testPattern:@"\\[\\S+\\s*:\\s+\\S+\\," inString:line])
-                    //   [RegexHelper testPattern:@",\\s+\\S+\\s*:\\s+\\S+\\]" inString:line])
-                {
-                    // Tightening for dicts. Incomplete but enough to get you to the right lines
-                    ++warnings;
-                    Log(@"%@:%zd: warning: Line %zd uses loose spacing for likely Dictionary type declaration", path, count, count);
-                }
-                else if ([RegexHelper testPattern:@"\\s+\\:" inString:line])
-                {
-                    ++warnings;
-                    Log(@"%@:%zd: warning: Line %zd uses a space before a colon", path, count, count);
-                }
+                // ignore "? x : y" in ternary statements
+            }
+            else if ([RegexHelper testPattern:@"\\?\\s+:" inString:line])
+            {
+                // ignore "? :" in ternary statements
+            }
+            else if ([RegexHelper testPattern:@"\".*:.*\"" inString:line])
+            {
+                // ignore between quotes (will miss a bunch here)
+            }
+            else if ([RegexHelper testPattern:@"\\?\\s+:" inString:line])
+            {
+                // ignore "? :" in ternary statements
+            }
+            else if ([RegexHelper testPattern:@"\\s+\\:" inString:line])
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd uses a space before a colon", path, count, count);
+            }
+            
+            // Spaces missing after colons
+            if ([RegexHelper testPattern:@"http\\:\\S+" inString:line]) {
+                // skip http:
+            }
+            else if ([RegexHelper testPattern:@"\"H\\:" inString:line] ||
+                     [RegexHelper testPattern:@"\"V\\:" inString:line])
+            {
+                // skip for "H: and "V:
+            }
+            else if ([RegexHelper testPattern:@"[:]" inString:line])
+            {
+                // allow [:]
+            }
+            else if ([RegexHelper testPattern:@"\\:\\S+" inString:line])
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd lacks a space after a colon", path, count, count);
+            }
+            
+#pragma mark - Kevin Tests
+            
+            /*
+             
+             The Rule of Kevin: “When a trailing closure argument is functional, 
+             use parentheses. When it is procedural, use braces.”
+             The consistency of style communicates whether closures return values. 
+             There’s an ongoing dispute as to whether a space should be left before  
+             trailing braces.
+             
+             Reliability/Stability: Quite Low
+             
+             */
+            
+            if ([RegexHelper testPattern:@"map\\s*\\{" inString:line] ||
+                [RegexHelper testPattern:@"filter\\s*\\{" inString:line] ||
+                [RegexHelper testPattern:@"flatMap\\s*\\{" inString:line] ||
+                [RegexHelper testPattern:@"withCString\\s*\\{" inString:line] ||
+                [RegexHelper testPattern:@"minElement\\s*\\{" inString:line] ||
+                [RegexHelper testPattern:@"maxElement\\s*\\{" inString:line] ||
+                [RegexHelper testPattern:@"sort\\s*\\{" inString:line] ||
+                [RegexHelper testPattern:@"reduce\\s*\\{" inString:line]
+                )
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd fails the Rule of Kevin. Use parens around functional calls", path, count, count);
+            }
+            else if ([RegexHelper testPattern:@"sortInPlace\\s*\\({" inString:line] ||
+                     [RegexHelper testPattern:@"startsWith\\s*\\({" inString:line] ||
+                     [RegexHelper testPattern:@"elementsEqual\\s*\\({" inString:line] ||
+                     [RegexHelper testPattern:@"contains\\s*\\({" inString:line] ||
+                     [RegexHelper testPattern:@"element\\s*\\({" inString:line] ||
+                     [RegexHelper testPattern:@"flatten\\s*\\({" inString:line] ||
+                     [RegexHelper testPattern:@"forEach\\s*\\({" inString:line] ||
+                     [RegexHelper testPattern:@"lexicographicalCompare\\s*\\({" inString:line]
+                     )
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd fails the Rule of Kevin. Skip parens around procedural calls", path, count, count);
+            }
+            
+#pragma mark - Core Geometry tests
+            
+            /*
+             
+             Prefer modern constructors, accessors, constants to old-style ones
+             
+             Reliability/Stability: Medium
+             
+             */
+            
+            if ([RegexHelper testString:@"CGRectMake" inString:line] ||
+                [RegexHelper testString:@"CGPointMake" inString:line] ||
+                [RegexHelper testString:@"CGSizeMake" inString:line] ||
+                [RegexHelper testString:@"CGVectorMake" inString:line]
+                )
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd: Prefer native constructors over old-style convenience functions", path, count, count);
+            }
+            else if ((![RegexHelper testString:@"CGAffineTransformMake" inString:line]) &&
+                ([RegexHelper testPattern:@"CG[:word:]*Make" inString:line] ||
+                 [RegexHelper testString:@"NSMake" inString:line]))
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd: Prefer native constructors over old-style convenience functions", path, count, count);
+            }
+
+            
+            if ([RegexHelper testString:@"CGPointGetMinX" inString:line] ||
+                [RegexHelper testString:@"CGPointGetMinY" inString:line] ||
+                [RegexHelper testString:@"CGPointGetMidX" inString:line] ||
+                [RegexHelper testString:@"CGPointGetMidY" inString:line] ||
+                [RegexHelper testString:@"CGPointGetMaxX" inString:line] ||
+                [RegexHelper testString:@"CGPointGetMaxY" inString:line]
+                )
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd uses non-Swift Core Geometry value accessors. Use .min, .mid, .max properties instead", path, count, count);
+            }
+            
+            
+            if ([RegexHelper testString:@"CGRectGetHeight" inString:line] ||
+                [RegexHelper testString:@"CGRectGetWidth" inString:line]
+                )
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd uses non-Swift Core Geometry value accessors. Use .width, .height properties instead", path, count, count);
+            }
+            
+            
+            if ([RegexHelper testString:@"CGRectZero" inString:line] ||
+                [RegexHelper testString:@"CGPointZero" inString:line] ||
+                [RegexHelper testString:@"CGSizeZero" inString:line] ||
+                [RegexHelper testString:@"CGRectInfinite" inString:line] ||
+                [RegexHelper testString:@"CGRectNull" inString:line]
+                )
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd uses non-Swift Core Geometry constants. Use .zero, .infinite, .null static properties instead", path, count, count);
+            }
+            
+            if ([RegexHelper testString:@"CGRectMinXEdge" inString:line] ||
+                [RegexHelper testString:@"CGRectMinYEdge" inString:line] ||
+                [RegexHelper testString:@"CGRectMaxXEdge" inString:line] ||
+                [RegexHelper testString:@"CGRectMaxYEdge" inString:line]
+                )
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd uses non-Swift Core Geometry edge types. Use min(XY)/mid(XY)/max(XY) properties instead", path, count, count);
+            }
+            
+            if ([RegexHelper testString:@"CGFLOAT_MIN" inString:line] ||
+                [RegexHelper testString:@"CGFLOAT_MAX" inString:line]
+                )
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd uses non-Swift Core Geometry constants. Use CGFloat.min and CGFloat.max instead", path, count, count);
+            }
+
+            
+#pragma mark - Use of yorn (always bad, not swift specific)
+            /*
+
+             yorn is a bad habit I need to break.
+             Reliability/Stability: High
+             
+             */
+            
+            if ([RegexHelper testString:@"yorn" inString:line])
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd uses yorn. yorn is wrong. Prefer parameter-specific boolean names over yes-or-no", path, count, count);
             }
             
 #pragma mark - Single-line Brace Check
 
             /*
 
-             Brace abuse checking defaults to NO
              Reliability/Stability: High but I'm not sure I really care about this test
              
              */
             
-            if (_enableSingleLineBraceAbuseCheck)
             {
                 if ([RegexHelper testPattern:@"\\{.*;.*\\}" inString:line])
                 {
                     ++warnings;
-                    Log(@"%@:%zd: warning: Excessive content in single-line scope", path, count, count);
+                    Log(@"%@:%zd: warning: Line %zd Excessive content in single-line scope", path, count, count);
                 }
                 
                 /*
@@ -215,7 +357,7 @@
                 //        if ([RegexHelper testPattern:@"\\{.{80,}\\}" inString:line])
                 //        {
                 //            ++warnings;
-                //            Log(@"%@:%zd: warning: Excessive content in single-line scope", path, count, count);
+                //            Log(@"%@:%zd: Line %zd warning: Excessive content in single-line scope", path, count, count);
                 //        }
             }
             
@@ -231,23 +373,66 @@
 
              */
             
-            if (_enableAllmanCheck)
+            // Allman
+            if ([RegexHelper testPattern:@"^\\s*\\{" inString:line])
             {
-                // Allman
-                if ([RegexHelper testPattern:@"^\\s*\\{" inString:line])
-                {
-                    ++warnings;
-                    Log(@"%@:%zd: warning: Line %zd uses egregious Allman pattern. Welcome to Swift.", path, count, count);
-                }
-                
-                if (![RegexHelper testString:@"#else" inString:line] &&
-                    ([RegexHelper testPattern:@"^\\s*else" inString:line] ||
-                     [RegexHelper testPattern:@"else\\s*$" inString:line]))
-                {
-                    ++warnings;
-                    Log(@"%@:%zd: warning: Else case does not follow colinear 1TBS standard.", path, count, count);
-                }
-                
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd uses egregious Allman pattern. Welcome to Swift.", path, count, count);
+            }
+            
+            if (![RegexHelper testString:@"#else" inString:line] &&
+                ([RegexHelper testPattern:@"^\\s*else" inString:line] ||
+                 [RegexHelper testPattern:@"else\\s*$" inString:line]))
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd Else case does not follow colinear 1TBS standard.", path, count, count);
+            }
+            
+//            // This is the anti-Allman version. I don't know why I have it here.
+//            if ([RegexHelper testPattern:@"\\S+\\s*\\{" inString:line])
+//            {
+//                ++warnings;
+//                Log(@"%@:%zd: warning: Line %zd uses non-Allman pattern. Kittens cry.", path, count, count);
+//            }
+//            
+//            if ([RegexHelper testPattern:@"\\}\\s+else" inString:line] ||
+//                [RegexHelper testPattern:@"else\\s+{" inString:line])
+//            {
+//                ++warnings;
+//                Log(@"%@:%zd: warning: Line %zd Else case does not follow Allman standard.", path, count, count);
+//            }
+            
+#pragma mark - Use of temp, tmp
+            /*
+             
+             Avoid meaningless names
+             stability/reliability: high
+             exhaustive definition: low
+             
+             */
+            if ([RegexHelper testString:@"temp" inString:line] ||
+                [RegexHelper testString:@"tmp" inString:line] ||
+                [RegexHelper testString:@"results" inString:line] ||
+                [RegexHelper testString:@"returnValue" inString:line])
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd: Avoid semantically meaningless names like temp, tmp, returnValue", path, count, count);
+            }
+            
+            /*
+             
+             Prefer meaningful index names
+             stability/reliability: medium-ish
+             Maybe replace with for var rule (prefer in over C-style loops)
+             or forEach.
+             
+             */
+            if ([RegexHelper testPattern:@"var i[\\s=]" inString:line] ||
+                [RegexHelper testPattern:@"var j[\\s=]" inString:line] ||
+                [RegexHelper testPattern:@"for.*\\s+i\\s+in" inString:line])
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: Line %zd: Avoid semantically meaningless iterator names (i, j)", path, count, count);
             }
         }
         
@@ -260,21 +445,36 @@
          Reliability/Stability: Very high
          
          */
-        if (!_skipHygieneChecks)
+
+        // Trailing whitespace on lines
+        if ([RegexHelper testPattern:@"\\s+//.*\\S\\s+$" inString:line])
         {
-            // Trailing whitespace on lines
-            if ([RegexHelper testPattern:@"\\s+//.*\\S\\s+$" inString:line])
-            {
-                // ignore extra spaces on comment lines
-            }
-            else if ([RegexHelper testPattern:@"\\S\\s+$" inString:line])
-            {
-                ++warnings;
-                Log(@"%@:%zd: warning: Line %zd includes trailing whitespace characters", path, count, count);
-            }
+            // ignore extra spaces on comment lines
+        }
+        else if ([RegexHelper testPattern:@"\\S\\s+$" inString:line])
+        {
+            ++warnings;
+            Log(@"%@:%zd: warning: Line %zd includes trailing whitespace characters", path, count, count);
         }
 
 #pragma mark - LANGUAGE ISSUES
+        
+#pragma mark - Collection Constructor Checks
+        /*
+         
+         Collection Constructors
+         Reliability/Stability: Medium-High
+         
+         */
+        
+        if ([RegexHelper testPattern:@"=.*>\\(\\)" inString:line]||
+            [RegexHelper testPattern:@"=.*]\\(\\)" inString:line]
+            ) {
+            ++warnings;
+            Log(@"%@:%zd: warning: Line %zd: avoid type-based constructors and prefer [] or [:] initialization instead", path, count, count);
+        }
+
+
         
         // LANGUAGE ISSUES
         /*
@@ -301,136 +501,20 @@
             Log(@"%@:%zd: warning: Line %zd: Extraneous space in init( or init?( declaration", path, count, count);
         }
         
-#pragma mark - Prefer native constructors
+#pragma mark - Prefer for-in or forEach over C-style loops
         /*
-         
-         Prefer native constructors
-         stability/reliability: High
+
+         Mostly avoid "for var" in favor of for name in
+         stability/reliability: med
+         Not sure this is a great rule or not
          
          */
-        if ((![RegexHelper testString:@"CGAffineTransformMake" inString:line]) &&
-            ([RegexHelper testPattern:@"CG[:word:]*Make" inString:line] ||
-            [RegexHelper testString:@"NSMake" inString:line]))
+        if ([RegexHelper testString:@"for var" inString:line])
         {
             ++warnings;
-            Log(@"%@:%zd: warning: Line %zd: Prefer native constructors over old-style convenience functions", path, count, count);
+            Log(@"%@:%zd: warning: Line %zd: Prefer for-in or forEach over C-style loops", path, count, count);
         }
 
-        
-#pragma mark - Trailing closures
-        
-        /*
-         I would encourage you to consider not using the trailing-closure syntax for any closures whose return value is meaningful (i.e. closures that aren't primarily executed for their side-effects)
-         
-         Eridius: erica: in your gist, you had it backwards. mirrorDo() is evaluating the closure for side-effects, so it can use trailing-closure syntax, mirrorMap() is the one that uses the return value and so should not
-         Eridius: although personally, I still wouldn't use trailing-closure syntax for mirrorDo() because it's using the .map() function, which is evaluated for its return value, you're just (ab)using that for side-effect reasons
-         Eridius: (i.e. I base the rule on the function being called, not the actual closure being executed)
-         
-         map, sort, sorted, join, split, reduce, filter, contains
-         
-         High false positive count for patterns of if let x = y, NL z = f(w) {
-         
-         Eridius: erica: basically, any function that takes a closure and returns something other than Void should probably not use trailing-closure syntax
-         [2:43pm] apparition joined the chat room.
-         [2:43pm] Eridius: although I might make an exception for something like NSNotificationCenter.addObserverForName(_:object:queue:usingBlock:)
-         [2:43pm] Eridius: because while that does return a value, it's still primarily a control-flow construct
-         */
-
-        /*
-         
-         trailing closure checks
-         stability/reliability: Very low
-         
-         */
-
-        BOOL testForClosureStuff = NO;
-        if (testForClosureStuff)
-        {
-            if ([RegexHelper testString:@"map{" inString:line])
-            {
-                ++warnings;
-                Log(@"%@:%zd: warning: Line %zd: Avoid trailing-closure for meaningful return values including maps", path, count, count);
-            }
-            else if ([RegexHelper testPattern:@"\\)\\s*\\{" inString:line] &&
-                     ![RegexHelper testPattern:@"^\\s*if " inString:line] &&
-                     ![RegexHelper testPattern:@"^\\s*for " inString:line] &&
-                     ![RegexHelper testPattern:@"^\\s*while " inString:line] &&
-                     ![RegexHelper testPattern:@"^\\s*do " inString:line] &&
-                     ![RegexHelper testString:@"switch" inString:line] &&
-                     ![RegexHelper testString:@"func " inString:line] &&
-                     ![RegexHelper testPattern:@"init\\?*\\s*\\(" inString:line])
-            {
-                //  &&               [RegexHelper testPattern:@"\\}+[^)]" inString:line])
-                // Boolean returns are likely to be if statements: contains, but contains can also have trailing for {}
-                ++warnings;
-                Log(@"%@:%zd: warning: Line %zd: Avoid trailing-closure for meaningful return values", path, count, count);
-//                NSLog(@"PING %@", line);
-//                for (NSString *fx in @[@"map(", @"sort(", @"sorted(", @"join(", @"split(", @"reduce(", @"filter("])
-//                {
-//                    if ([RegexHelper testString:fx inString:line]) {
-//                        ++warnings;
-//                        Log(@"%@:%zd: warning: Line %zd: Avoid trailing-closure for meaningful return values", path, count, count);
-//                    }
-//                }
-            }
-        }
-        
-#pragma mark - Access Modifiers
-        /*
-         
-         Access modifiers checks
-         stability/reliability - very low
-         
-         */
-        if (_enableAccessModifierChecks && !skipAccessCheckForFile)
-        {
-            if (!topLevel && [RegexHelper testPattern:@"^\\s*func" inString:line])
-            {
-                ++warnings;
-                Log(@"%@:%zd: warning: Line %zd: No access modifier for func declaration", path, count, count);
-            }
-
-            // This does not seem to be catching things. Not sure why.
-            if (!topLevel && [RegexHelper testPattern:@"^\\s*class\\s+func" inString:line])
-            {
-                ++warnings;
-                Log(@"%@:%zd: warning: Line %zd: No access modifier for func declaration", path, count, count);
-            }
-            
-            // Would also want access modifier checks for struct/class/enum properties
-            // let or var is first item on line, must test against untrimmed version
-            if ([eachLine hasPrefix:@"let"] ||
-                [eachLine hasPrefix:@"var"])
-            {
-                ++warnings;
-                Log(@"%@:%zd: warning: Line %zd: No access modifier for likely top-level variable assignment", path, count, count);
-            }
-            
-            // Extensions must be on non-generic types
-            if ([RegexHelper testPattern:@"extension\\s*\\S+\\s*:\\s*\\S+" inString:line])
-            {
-                // Does the class likely declare protocol conformance? If so, skip
-            }
-            else if ([RegexHelper testPattern:@"^\\s*extension" inString:line])
-            {
-                BOOL skip = NO;
-                for (NSString *className in @[@"Array", @"ArraySlice", @"AutoreleasingUnsafeMutablePointer", @"BidirectionalReverseView", @"CFunctionPointer", @"ClosedInterval", @"CollectionOfOne", @"ContiguousArray", @"EmptyCollection", @"EmptyGenerator", @"GeneratorOf", @"GeneratorOfOne", @"HalfOpenInterval", @"RandomAccessReverseView", @"Range", @"RangeGenerator", @"Repeat", @"SequenceOf", @"Set", @"SetGenerator", @"SetIndex", @"SinkOf", @"StrideThrough", @"StrideThroughGenerator", @"StrideTo", @"StrideToGenerator", @"Unmanaged", @"UnsafeBufferPointer", @"UnsafeBufferPointerGenerator", @"UnsafeMutableBufferPointer", @"UnsafeMutablePointer", @"UnsafePointer"])
-                {
-                    NSString *check = [NSString stringWithFormat:@"extension\\s*%@",className];
-                    if ([RegexHelper testPattern:check inString:line])
-                        skip = YES;
-                    
-                }
-                
-                
-                if (!skip)
-                {
-                    ++warnings;
-                    Log(@"%@:%zd: warning: Line %zd: No access modifier for non-generic type extension", path, count, count);
-                }
-            }
-        }
-        
 #pragma mark - (...) -> Void check
         
         /*
@@ -466,7 +550,7 @@
         if ([RegexHelper testPattern:@";\\s*$" inString:line])
         {
             ++warnings;
-            Log(@"%@:%zd: warning: Line %zd: Swift does not require terminal semicolons except for statement separation", path, count, count);
+            Log(@"%@:%zd: warning: Line %zd: Swift does not require terminal semicolons except for statement separation. They are bad. You should feel bad.", path, count, count);
         }
         
 #pragma mark - Check for parens around if conditions
@@ -502,8 +586,24 @@
             ++warnings;
             Log(@"%@:%zd: warning: Line %zd: Swift switch statements do not require parentheses", path, count, count);
         }
-
         
+#pragma mark - Check for Pattern Matching issues
+        /*
+         
+         Just starting on this, which is for testing for less
+         desirable pattern matching habits.
+         
+         Reliability/Stability: Quite Low
+         
+         */
+        
+        if ([RegexHelper testPattern:@"case\\s*\\(let" inString:line] ||
+            [RegexHelper testPattern:@"case\\s*\\(var" inString:line])
+        {
+            ++warnings;
+            Log(@"%@:%zd: warning: Line %zd embeds let/var. Consider moving the binding keyword outs of the parens", path, count, count);
+        }
+
 #pragma mark - Extraneous lets
         
         /*
@@ -525,41 +625,32 @@
         {
             ++warnings;
             Log(@"%@:%zd: warning: Line %zd: Check for extraneous let usage in cascaded let", path, count, count);
-//            ++cautions;
-//            Log(@"%@:%zd: note: Line %zd: CAUTION: Check for extraneous let usage in cascaded let", path, count, count);
-//            Log(@"%@", line);
         }
         
 #pragma mark - Forced unwraps and casts
-        
         /*
          
          Forced unwraps and casts
-         Limit use of forced unwrap and casts, however there are many cromulent reasons to
+         Limit use of forced unwrap and casts, however there are some cromulent reasons to
          use these. Currently issued as warning rather than caution, but may downgrade or
          offer forceChecksAreCautions option.
 
          stability/reliability medium
          
          */
-        
-        if (_enableUnwrapAndForcedCastCheck)
+        if ([RegexHelper testString:@" as!" inString:line])
         {
-            if ([RegexHelper testString:@"as!" inString:line])
-            {
-                // I've commented this out because nearly every use of as! is pretty deliberate
-//                ++warnings;
-//                Log(@"%@:%zd: warning: Line %zd: Forced casts are generally unsafe", path, count, count);
-            }
-            else if ([RegexHelper testPattern:@":\\s*\\w+! " inString:line])
-            {
-                // Also a do-nothing. This is likely an implicitly unwrapped declaration
-            }
-            else if ([RegexHelper testString:@"! " inString:line])
-            {
-                ++warnings;
-                Log(@"%@:%zd: warning: Line %zd: Forced unwrapping is unsafe. Use let to conditionally unwrap where possible.", path, count, count);
-            }
+            ++warnings;
+            Log(@"%@:%zd: warning: Line %zd: Forced casts are generally unsafe", path, count, count);
+        }
+        else if ([RegexHelper testPattern:@":\\s*\\w+! " inString:line])
+        {
+            // Also a do-nothing. This is likely an implicitly unwrapped declaration
+        }
+        else if ([RegexHelper testString:@"! " inString:line])
+        {
+            ++warnings;
+            Log(@"%@:%zd: warning: Line %zd: Forced unwrapping is unsafe. Use let to conditionally unwrap where possible.", path, count, count);
         }
         
 #pragma mark - Extraneous break statements
@@ -621,7 +712,7 @@
                  [RegexHelper testPattern:@"count\\(.*\\)\\s*==\\s*0" inString:line])
         {
             ++warnings;
-            Log(@"%@:%zd: warning: Line %zd: Consider replacing zero count check with isEmpty().", path, count, count);
+            Log(@"%@:%zd: warning: Line %zd: Consider replacing zero count check with isEmpty.", path, count, count);
         }
         
 #pragma mark - NSNotFound checks
@@ -637,7 +728,7 @@
         if ([RegexHelper testPattern:@"!=\\s*NSNotFound" inString:line])
         {
             ++warnings;
-            Log(@"%@:%zd: warning: Consider replacing NSNotFound pattern with contains()", path, count, count);
+            Log(@"%@:%zd: warning: Line %zd: Consider replacing NSNotFound pattern with contains", path, count, count);
         }
         
 #pragma mark - Ref checks
@@ -653,9 +744,94 @@
         if ([RegexHelper testCaseSensitivePattern:@"[:upper:]{3}\\w*Ref\\W" inString:line])
         {
             ++warnings;
-            Log(@"%@:%zd: warning: CFReference types need not end with Ref in Swift", path, count, count);
+            Log(@"%@:%zd: warning: Line %zd CFReference types need not end with Ref in Swift", path, count, count);
         }
 
+#pragma mark - Trailing Closures
+        /*
+         
+         Goal: Use trailing closures only for procedural elements that do not pass through values
+         
+         NOT: withUnsafeBufferPointer, withUnsafeMutableBufferPointer, withUTF8Buffer, withCString,
+         withExtendedLifetime, withUnsafePointer, withUnsafePointers, withUnsafeMutablePointer, withUnsafeMutablePointers,
+         withVaList
+         
+         stability/reliability medium, especially as language constructs evolve
+         
+         s: `@"\b(map|flatMap|filter|indexOf|minElement|...)\s*{"`
+         
+         */
+        
+        if ([RegexHelper testPattern:@"map\\s*{" inString:line] ||
+            [RegexHelper testPattern:@"flatMap\\s*{" inString:line] ||
+            [RegexHelper testPattern:@"filter\\s*{" inString:line] ||
+            [RegexHelper testPattern:@"indexOf\\s*{" inString:line] ||
+            [RegexHelper testPattern:@"minElement\\s*{" inString:line] ||
+            [RegexHelper testPattern:@"maxElement\\s*{" inString:line] ||
+            [RegexHelper testPattern:@"startsWith\\s*{" inString:line] ||
+            [RegexHelper testPattern:@"elementsEqual\\s*{" inString:line] ||
+            [RegexHelper testPattern:@"lexicographicalCompare\\s*{" inString:line] ||
+            [RegexHelper testPattern:@"contains\\s*{" inString:line] ||
+            [RegexHelper testPattern:@"reduce\\s*{" inString:line] ||
+            [RegexHelper testPattern:@"startsWith\\s*{" inString:line] ||
+            [RegexHelper testPattern:@"split\\s*{" inString:line]
+            )
+        {
+            ++warnings;
+            Log(@"%@:%zd: warning: Line %zd Treat non-procedural trailing closures as arguments by enclosing within parens", path, count, count);
+        }
+
+#pragma mark - MAX and MIN usage
+        /*
+         
+         Any use of _MAX / MIN or some name like that is likely to be replaced in Swift by .max/.min
+         
+         */
+        
+        if ([RegexHelper testString:@"_MAX" inString:line] ||
+            [RegexHelper testString:@"_MIN" inString:line])
+        {
+            ++warnings;
+            Log(@"%@:%zd: warning: Line %zd Prefer Swift .max and .min over old constants", path, count, count);
+        }
+        
+
+        
+#pragma mark - Antiquated -> ( tests
+        /*
+         
+         Check for -> ( patterns
+         
+         stability/reliability medium 
+         
+         */
+        
+        if ([RegexHelper testPattern:@"->\\s*\\([^,]*\\)" inString:line])
+        {
+            ++warnings;
+            Log(@"%@:%zd: warning: Line %zd parens after return token are not required except for tuples", path, count, count);
+        }
+        
+
+#pragma mark - Option Set checks
+        /*
+         
+         Convert option sets with raw values to []
+         
+         stability/reliability low-medium (will improve as I figure this out)
+         
+         */
+        if ([RegexHelper testString:@"Options" inString:line] &&
+            [RegexHelper testPattern:@"rawValue:\\s*0\\)" inString:line])
+        {
+            ++warnings;
+            Log(@"%@:%zd: warning: Line %zd Many zero options can now be replaced with [] instead", path, count, count);
+        }
+        else if ([RegexHelper testPattern:@"rawValue:" inString:line])
+        {
+            ++warnings;
+            Log(@"%@:%zd: warning: Line %zd Many rawValue initializers can now be replaced with option set initialization", path, count, count);
+        }
         
         
 #pragma mark - Enumeration prefix checks
@@ -665,6 +841,7 @@
          Highlight enumeration prefixes for elimnation
          
          stability/reliability high
+         note the list needs to be upgraded for iOS 9/OS X 10.11
          
          */
 
@@ -689,7 +866,6 @@
          
          */
 
-        if (_enableConstructors)
         {
             // Matches most no-arg class methods as likely constructors
             if ([RegexHelper testCaseSensitivePattern:@"^\\s*[:upper:]\\w+\\.\\w+\\(\\)" inString:line])
@@ -725,7 +901,6 @@
          
          */
         
-        BOOL treatSelfRefAsWarning = YES;
         if ([RegexHelper testString:@"self.init" inString:line])
         {
             // Skip self.init pattern
@@ -742,35 +917,19 @@
         {
             // Skip single line likely closure reference {....self...}
         }
+        else if ([RegexHelper testString:@"self[" inString:line])
+        {
+            // Skip array access
+        }
         else if ([RegexHelper testPattern:@"self\\.(\\S)+\\s*=\\s*\\S" inString:line])
         {
-            // initialization
-            if (treatSelfRefAsWarning)
-            {
-                ++warnings;
-                Log(@"%@:%zd: warning: Line %zd: Swift does not usually require 'self' references for assignments", path, count, count);
-            }
-            else
-            {
-                ++cautions;
-                Log(@"%@:%zd: note: Line %zd: CAUTION: Swift does not usually require 'self' references for assignments", path, count, count);
-                Log(@"%@", line);
-            }
+            ++warnings;
+            Log(@"%@:%zd: warning: Line %zd: Swift does not usually require 'self' references for assignments", path, count, count);
         }
         else if ([RegexHelper testString:@"self." inString:line])
         {
-            // any other self refs
-            if (treatSelfRefAsWarning)
-            {
-                ++warnings;
-                Log(@"%@:%zd: warning: Line %zd: Swift does not usually require 'self' references outside of closures", path, count, count);
-            }
-            else
-            {
-                ++cautions;
-                Log(@"%@:%zd: note: Line %zd: CAUTION: Swift does not usually require 'self' references outside of closures", path, count, count);
-                Log(@"%@", line);
-            }
+            ++warnings;
+            Log(@"%@:%zd: warning: Line %zd: Swift does not usually require 'self' references outside of closures", path, count, count);
         }
     }
 
@@ -785,14 +944,11 @@
      
      */
 
-    if (!_skipHygieneChecks)
+    // File-level line hygiene
+    if ([string hasSuffix:@"\n\n"] || ![string hasSuffix:@"\n"])
     {
-        // File-level line hygiene
-        if ([string hasSuffix:@"\n\n"] || ![string hasSuffix:@"\n"])
-        {
-            ++warnings;
-            Log(@"%@:0: warning: File %@ should have a single trailing newline", path, path.lastPathComponent);
-        }
+        ++warnings;
+        Log(@"%@:0: warning: File %@ should have a single trailing newline", path, path.lastPathComponent);
     }
 
     Log(@"%zd warnings, %zd cautions for %@", warnings, cautions, path.lastPathComponent);
