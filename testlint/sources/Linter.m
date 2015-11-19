@@ -184,7 +184,7 @@
             else if ([RegexHelper testPattern:@"\"H\\:" inString:line] ||
                      [RegexHelper testPattern:@"\"V\\:" inString:line])
             {
-                // skip for "H: and "V:
+                // skip for "H: and "V: which are quite common for auto layout VPL
             }
             else if ([RegexHelper testPattern:@"[:]" inString:line])
             {
@@ -206,7 +206,13 @@
              There’s an ongoing dispute as to whether a space should be left before  
              trailing braces.
              
-             Reliability/Stability: Quite Low
+             Reliability/Stability: Quite Low. Needs a *lot* of love.
+             
+             NOT: withUnsafeBufferPointer, withUnsafeMutableBufferPointer, withUTF8Buffer, withCString,
+             withExtendedLifetime, withUnsafePointer, withUnsafePointers, withUnsafeMutablePointer, withUnsafeMutablePointers,
+             withVaList
+             
+             s: `@"\b(map|flatMap|filter|indexOf|minElement|...)\s*{"`
              
              */
             
@@ -217,11 +223,18 @@
                 [RegexHelper testPattern:@"minElement\\s*\\{" inString:line] ||
                 [RegexHelper testPattern:@"maxElement\\s*\\{" inString:line] ||
                 [RegexHelper testPattern:@"sort\\s*\\{" inString:line] ||
+                [RegexHelper testPattern:@"indexOf\\s*{" inString:line] ||
+                [RegexHelper testPattern:@"startsWith\\s*{" inString:line] ||
+                [RegexHelper testPattern:@"elementsEqual\\s*{" inString:line] ||
+                [RegexHelper testPattern:@"lexicographicalCompare\\s*{" inString:line] ||
+//                [RegexHelper testPattern:@"contains\\s*{" inString:line] ||
+//                [RegexHelper testPattern:@"startsWith\\s*{" inString:line] ||
+                [RegexHelper testPattern:@"split\\s*{" inString:line] ||
                 [RegexHelper testPattern:@"reduce\\s*\\{" inString:line]
                 )
             {
                 ++warnings;
-                Log(@"%@:%zd: warning: Line %zd fails the Rule of Kevin. Use parens around functional calls", path, count, count);
+                Log(@"%@:%zd: warning: Line %zd fails the Rule of Kevin. Treat functional (non-procedural) trailing closures as arguments by enclosing within parens", path, count, count);
             }
             else if ([RegexHelper testPattern:@"sortInPlace\\s*\\({" inString:line] ||
                      [RegexHelper testPattern:@"startsWith\\s*\\({" inString:line] ||
@@ -745,40 +758,6 @@
         {
             ++warnings;
             Log(@"%@:%zd: warning: Line %zd CFReference types need not end with Ref in Swift", path, count, count);
-        }
-
-#pragma mark - Trailing Closures
-        /*
-         
-         Goal: Use trailing closures only for procedural elements that do not pass through values
-         
-         NOT: withUnsafeBufferPointer, withUnsafeMutableBufferPointer, withUTF8Buffer, withCString,
-         withExtendedLifetime, withUnsafePointer, withUnsafePointers, withUnsafeMutablePointer, withUnsafeMutablePointers,
-         withVaList
-         
-         stability/reliability medium, especially as language constructs evolve
-         
-         s: `@"\b(map|flatMap|filter|indexOf|minElement|...)\s*{"`
-         
-         */
-        
-        if ([RegexHelper testPattern:@"map\\s*{" inString:line] ||
-            [RegexHelper testPattern:@"flatMap\\s*{" inString:line] ||
-            [RegexHelper testPattern:@"filter\\s*{" inString:line] ||
-            [RegexHelper testPattern:@"indexOf\\s*{" inString:line] ||
-            [RegexHelper testPattern:@"minElement\\s*{" inString:line] ||
-            [RegexHelper testPattern:@"maxElement\\s*{" inString:line] ||
-            [RegexHelper testPattern:@"startsWith\\s*{" inString:line] ||
-            [RegexHelper testPattern:@"elementsEqual\\s*{" inString:line] ||
-            [RegexHelper testPattern:@"lexicographicalCompare\\s*{" inString:line] ||
-            [RegexHelper testPattern:@"contains\\s*{" inString:line] ||
-            [RegexHelper testPattern:@"reduce\\s*{" inString:line] ||
-            [RegexHelper testPattern:@"startsWith\\s*{" inString:line] ||
-            [RegexHelper testPattern:@"split\\s*{" inString:line]
-            )
-        {
-            ++warnings;
-            Log(@"%@:%zd: warning: Line %zd Treat non-procedural trailing closures as arguments by enclosing within parens", path, count, count);
         }
 
 #pragma mark - MAX and MIN usage
