@@ -16,17 +16,10 @@ No dependencies.
 ###Options:
 
     Usage: /Users/ericasadun/bin/testlint options file...
-        help:                       -help
-        skip strict colon checks:   -relaxcolons  (Standard Swift style)
-        skip Allman check:          -allmanrocks  (Standard Swift style)
-        skip all style checks:      -nostyle      (Standard Swift style)
-        skip cast/unwrap checks:    -nocast       (Extra strict)
-        skip hygiene checks:        -nohygiene    (Extraneous spacing)
-        access modifier checks:     -access       (False positives)
-        enable constructor checks:  -constructors (False positives)
-    
-    Use 'NOTE: ', 'ERROR: ', 'WARNING: ', and FIXME to force emit
+        help:                       -help    
+    Use 'NOTE: ', 'ERROR: ', 'WARNING: ', HACK, and FIXME to force emit
     Use 'nwm' to skip individual line processing: // nwm
+    Use ##SkipAccessChecksForFile somewhere to skip file processing
 
 
 ###Future directions:
