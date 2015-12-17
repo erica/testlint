@@ -154,6 +154,22 @@
         {
             /*
              
+             Extra catches for me
+             
+             */
+            
+            if ([RegexHelper testPattern:@"XCPSetExecutionShouldContinueIndefinitely" inString:line] ||
+                [RegexHelper testPattern:@"XCPSharedDataDirectoryPath" inString:line] ||
+                [RegexHelper testPattern:@"XCPCaptureValue" inString:line] ||
+                [RegexHelper testPattern:@"XCPShowView" inString:line]
+                )
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning old style XCPlayground use", path, count, count);
+            }
+
+            /*
+             
              https://github.com/apple/swift-evolution/blob/master/proposals/0001-keywords-as-argument-labels.md
              
              Reliability/Stability: probably medium-high
