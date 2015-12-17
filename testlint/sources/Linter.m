@@ -24,6 +24,19 @@
  - missing access modifiers? access modifier scan?
  - De Morgan's law check? (probably not)
  
+ Possible:
+ - Eliminate get in read-only computed properties and subscripts
+ - omit return keyword in single-expression closure
+ - construct names capped
+ - enum cases capped
+ - switch's should have at least n clauses
+ - field names shouldn't dupe construct names
+ - backticks and reserved words -- not for symbol names
+ - avoid implicit unwrapped?
+ - 
+ 
+ - See various in book chapters (there's a lot)
+ 
  */
 
 @implementation Linter
@@ -137,6 +150,108 @@
                 continue;
         }
         
+#pragma mark - Swift 3.0 Warnings
+        {
+            /*
+             
+             https://github.com/apple/swift-evolution/blob/master/proposals/0001-keywords-as-argument-labels.md
+             
+             Reliability/Stability: probably medium-high
+             
+             */
+            
+            if ([RegexHelper testPattern:@"[^+]\\+\\+[^+]" inString:line]
+                )
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: ++ and -- operators to be removed in Swift 3.0", path, count, count);
+            }
+            
+            /*
+             
+             https://github.com/apple/swift-evolution/blob/master/proposals/0004-remove-pre-post-inc-decrement.md
+             
+             Reliability/Stability: probably medium
+             
+             */
+            
+            if ([RegexHelper testPattern:@"`\\w+`\\s*:" inString:line]
+                )
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: keyword escapes will not be needed in Swift 3.0", path, count, count);
+            }
+
+            /*
+             
+             https://github.com/apple/swift-evolution/blob/master/proposals/0002-remove-currying.md
+             
+             Reliability/Stability: probably medium
+             
+             */
+            
+            if ([RegexHelper testPattern:@"func.*\\(.*\\)\\(.*\\)" inString:line]
+                )
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: direct currying to be removed Swift 3.0", path, count, count);
+            }
+            
+            /*
+             
+             https://github.com/apple/swift-evolution/blob/master/proposals/0007-remove-c-style-for-loops.md
+             
+             Reliability/Stability: probably medium
+             
+             Note: May double-catch with for var x in array due to use with, e.g.
+
+             for var i = 0 ; i < 10 ; i++ {
+                 print(i)
+             }
+             
+             Note: May also double-catch with ++ and -- tests
+             
+             */
+            
+            if ([RegexHelper testPattern:@"for.*;.*;" inString:line]
+                )
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: C-style for-loops to be removed Swift 3.0", path, count, count);
+            }
+
+
+            /*
+             
+             https://github.com/apple/swift-evolution/blob/master/proposals/0003-remove-var-parameters-patterns.md
+             
+             Reliability/Stability: probably medium
+             
+             */
+            
+            if ([RegexHelper testPattern:@"func.*\\Wvar " inString:line] ||
+                [RegexHelper testPattern:@"guard\\s+var " inString:line] ||
+                [RegexHelper testPattern:@"while\\s+var " inString:line] ||
+                [RegexHelper testPattern:@"case\\s+var" inString:line] ||
+                [RegexHelper testPattern:@"case\\s+\\.\\w+\\(var" inString:line] ||
+                [RegexHelper testPattern:@"case\\s+\\.\\w+\\(.*, var" inString:line] ||
+                [RegexHelper testPattern:@"for\\s+var" inString:line]
+                )
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: var parameters to be removed Swift 3.0", path, count, count);
+            }
+            
+            if (
+                [RegexHelper testPattern:@"if\\s+var " inString:line]
+                )
+            {
+                ++warnings;
+                Log(@"%@:%zd: warning: var parameters to be removed Swift 3.0. Use if let and move shadowed var assignment into the following scope", path, count, count);
+            }
+
+        }
+        
 #pragma mark - STYLE ISSUES
         
         // STYLE ISSUES
@@ -195,7 +310,7 @@
                 ++warnings;
                 Log(@"%@:%zd: warning: Line %zd lacks a space after a colon", path, count, count);
             }
-            
+           
 #pragma mark - Kevin Tests
             
             /*
