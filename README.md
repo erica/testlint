@@ -2,7 +2,7 @@
 
 Sometimes little thrown-together solutions create greater value than their aesthetics would promise. 
 
-###Setup
+### Setup
 
 * Compile
 * Add to Swift project build phases (Target > Build Phases >  or use directly at the command line.
@@ -13,7 +13,7 @@ When you do not add arguments, the utility looks for an .xcodeproj folder in the
 
 No dependencies.
 
-###Options:
+### Options:
 
     Usage: /Users/ericasadun/bin/testlint options file...
         help:                       -help    
@@ -22,7 +22,7 @@ No dependencies.
     Use ##SkipAccessChecksForFile somewhere to skip file processing
 
 
-###Future directions:
+### Future directions:
 
 For any of the nuanced features (specifically constructors and public access checks), this tool is either leaky like a sieve or creating false positives all over the place. I'm exploring possibilities but even with these issues, I'm using the utility regularly and am happy with the help it offers.
 
