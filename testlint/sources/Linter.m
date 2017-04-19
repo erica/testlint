@@ -747,29 +747,6 @@
             ++warnings;
             Log(@"%@:%zd: warning: Line %zd embeds let/var. Consider moving the binding keyword outs of the parens", path, count, count);
         }
-
-#pragma mark - Extraneous lets
-        
-        /*
-         
-         Extraneous lets. For multi-line in-context scan, would test for ,\s*\n\s*let
-         stability/reliability medium
-         
-         */
-        
-        if ([RegexHelper testString:@"case" inString:line])
-        {
-            // do not test with case statements
-        }
-        else if ([RegexHelper testString:@"(.*let" inString:line])
-        {
-            // Skip lines that are likely tuple assignments in switch statements
-        }
-        else if ([RegexHelper testString:@", let" inString:line])
-        {
-            ++warnings;
-            Log(@"%@:%zd: warning: Line %zd: Check for extraneous let usage in cascaded let", path, count, count);
-        }
         
 #pragma mark - Forced unwraps and casts
         /*
